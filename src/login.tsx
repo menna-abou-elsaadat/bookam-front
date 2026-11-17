@@ -1,21 +1,17 @@
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
 import { useState } from "react";
+import type { AuthUser } from "./auth";
 
 type LoginProps = {
-  onLogin: () => void;
+  onLogin: (user: AuthUser) => void;
   onRegister: () => void;
 };
 
 type LoginMutationData = {
   login: {
     token: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      roles: string[];
-    };
+    user: AuthUser;
   };
 };
 
@@ -32,6 +28,7 @@ const LOGIN_MUTATION = gql`
         id
         name
         email
+        phone
         roles
       }
     }
@@ -101,7 +98,7 @@ function Login({ onLogin, onRegister }: LoginProps) {
                 }
 
                 localStorage.setItem("authToken", token);
-                onLogin();
+                onLogin(data.login.user);
               } catch {
                 setLoginError("Invalid email or password");
               }

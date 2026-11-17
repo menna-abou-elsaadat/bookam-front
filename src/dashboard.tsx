@@ -1,5 +1,8 @@
 import { useState, useMemo } from "react";
-import "./App.css";
+import { useNavigate } from "react-router-dom";
+import type { AuthUser } from "./auth";
+import Sidebar, { type SidebarItem } from "./Sidebar";
+import Header from "./Header";
 type Unit = {
   id: number;
   name: string;
@@ -46,18 +49,25 @@ const initialUnits: Unit[] = [
 
 type Tab = "Overview" | "Expenses" | "Furniture" | "Rent";
 type DashboardProps = {
+  user: AuthUser | null;
   onLogout: () => void | Promise<void>;
   logoutError: string | null;
   isLoggingOut: boolean;
 };
 
-function Dashboard({ onLogout, logoutError, isLoggingOut }: DashboardProps) {
+function Dashboard({
+  user,
+  onLogout,
+  logoutError,
+  isLoggingOut,
+}: DashboardProps) {
+  const navigate = useNavigate();
   const [units] = useState(initialUnits);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>("Overview");
-  const [activeNav, setActiveNav] = useState("Dashboard");
+  const [activeNav, setActiveNav] = useState<SidebarItem>("Dashboard");
 
   const filteredUnits = useMemo(() => {
     return units.filter((unit) => {
@@ -88,96 +98,30 @@ function Dashboard({ onLogout, logoutError, isLoggingOut }: DashboardProps) {
       maximumFractionDigits: 0,
     }).format(value);
 
+  const selectDashboardSection = (section: SidebarItem) => {
+    setSelectedId(null);
+    setFilter("All");
+    setActiveNav(section);
+  };
+
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="brand">
-          <img
-            className="bookam-logo dashboard-logo"
-            src="/bookam-logo.jpeg"
-            alt="Bookam — Book. Manage. Grow."
-          />
-        </div>
-
-        <p className="nav-label">YOUR SPACE</p>
-        <button
-          className={`nav-item ${activeNav === "Dashboard" ? "active" : ""}`}
-          onClick={() => {
-            setSelectedId(null);
-            setFilter("All");
-            setActiveNav("Dashboard");
-          }}
-        >
-          <span className="nav-icon">⌂</span> Dashboard
-        </button>
-        <button
-          className={`nav-item ${activeNav === "My Units" ? "active" : ""}`}
-          onClick={() => {
-            setSelectedId(null);
-            setFilter("All");
-            setActiveNav("My Units");
-          }}
-        >
-          <span className="nav-icon">▦</span> My Units
-        </button>
-        <button
-          className={`nav-item ${activeNav === "Rentals" ? "active" : ""}`}
-          onClick={() => {
-            setSelectedId(null);
-            setFilter("Rented");
-            setActiveNav("Rentals");
-          }}
-        >
-          <span className="nav-icon">◷</span> Rentals
-        </button>
-        <button
-          className={`nav-item ${activeNav === "Maintenance" ? "active" : ""}`}
-          onClick={() => {
-            setSelectedId(null);
-            setFilter("Maintenance");
-            setActiveNav("Maintenance");
-          }}
-        >
-          <span className="nav-icon">⚒</span> Maintenance
-        </button>
-
-        <div className="sidebar-bottom">
-          <div className="avatar">O</div>
-          <div>
-            <strong>Property Owner</strong>
-            <p>Owner account</p>
-          </div>
-        </div>
-      </aside>
+      <Sidebar
+        user={user}
+        activeItem={activeNav}
+        onDashboardSectionSelect={selectDashboardSection}
+      />
 
       <main className="main">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">YOUR PROPERTY DASHBOARD</p>
-            <h1>Your home base</h1>
-          </div>
-          <div className="topbar-actions">
-            <button
-              className="profile-button"
-              onClick={() => {
-                setSelectedId(null);
-                setFilter("All");
-                setSearch("");
-                setActiveNav("Dashboard");
-              }}
-            >
-              <span className="avatar small">O</span>
-              My Portfolio
-            </button>
-            <button
-              className="logout-button"
-              onClick={onLogout}
-              disabled={isLoggingOut}
-            >
-              {isLoggingOut ? "Logging out..." : "Log out"}
-            </button>
-          </div>
-        </header>
+        <Header
+          eyebrow="YOUR PROPERTY DASHBOARD"
+          title="Your home base"
+          user={user}
+          profileLabel="My Portfolio"
+          profilePath="/portfolio"
+          onLogout={onLogout}
+          isLoggingOut={isLoggingOut}
+        />
         {logoutError && (
           <p role="alert" className="login-error">
             {logoutError}
@@ -188,7 +132,8 @@ function Dashboard({ onLogout, logoutError, isLoggingOut }: DashboardProps) {
           <div>
             <p className="eyebrow">A LITTLE LOOK AT YOUR PORTFOLIO</p>
             <h2>
-              Good to see you, Owner! <span aria-hidden="true">✦</span>
+              Good to see you, {user?.name ?? "Owner"}!{" "}
+              <span aria-hidden="true">✦</span>
             </h2>
             <p>
               Your properties are in good hands. Here’s what’s happening today.
@@ -235,9 +180,17 @@ function Dashboard({ onLogout, logoutError, isLoggingOut }: DashboardProps) {
               <h2>My Units</h2>
               <p>All your places, together in one happy place.</p>
             </div>
-            <span className="unit-count">
-              {filteredUnits.length} lovely spaces
-            </span>
+            <div className="section-heading-actions">
+              <span className="unit-count">
+                {filteredUnits.length} lovely spaces
+              </span>
+              <button
+                className="add-feature-button"
+                onClick={() => navigate("/units/new")}
+              >
+                + Create unit
+              </button>
+            </div>
           </div>
 
           <div className="toolbar">

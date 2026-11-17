@@ -1,21 +1,17 @@
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
 import { useState } from "react";
+import type { AuthUser } from "./auth";
 
 type RegistrationProps = {
-  onRegister: () => void;
+  onRegister: (user: AuthUser) => void;
   onLogin: () => void;
 };
 
 type RegisterMutationData = {
   register: {
     token: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      roles: string[];
-    };
+    user: AuthUser;
   };
 };
 
@@ -144,7 +140,10 @@ function Registration({ onRegister, onLogin }: RegistrationProps) {
                 }
 
                 localStorage.setItem("authToken", token);
-                onRegister();
+                onRegister({
+                  ...data.register.user,
+                  phone: String(formData.get("phone")),
+                });
               } catch (error) {
                 setRegistrationError(
                   error instanceof Error
